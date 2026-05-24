@@ -2,10 +2,9 @@
   "name": "zorva-app",
   "private": true,
   "scripts": {
-    "dev": "npm run dev --prefix src",
-    "build": "npm run build --prefix src",
-    "start": "npm run start --prefix src",
-    "lint": "npm run lint --prefix src",
-    "install:app": "npm install --prefix src"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "npm run lint --prefix src"
   }
 }
