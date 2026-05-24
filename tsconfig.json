@@ -1,0 +1,17 @@
+{
+  "extends": "./src/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/next-env.d.ts",
+    "src/.next/types/**/*.ts",
+    "src/.next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", "src/node_modules", "middleware.ts"]
+}
