@@ -21,8 +21,6 @@ import { Plus, FileText, Eye, Sparkles, Trash2, Building2, GraduationCap, Calend
 import { useApiClient } from "@/lib/api"
 
 
-const router = useRouter()
-
 interface Course {
   id: string
   name: string
@@ -33,6 +31,7 @@ interface Course {
 }
 
 export function CourseGrid() {
+  const router = useRouter()
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false)
   const api = useApiClient()
   const [courses, setCourses] = useState<Course[]>([])
