@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger,
@@ -19,6 +20,9 @@ import { Label } from "@/components/ui/label"
 import { Plus, FileText, Eye, Sparkles, Trash2, Building2, GraduationCap, Calendar } from "lucide-react"
 import { useApiClient } from "@/lib/api"
 
+
+const router = useRouter()
+
 interface Course {
   id: string
   name: string
@@ -29,6 +33,7 @@ interface Course {
 }
 
 export function CourseGrid() {
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false)
   const api = useApiClient()
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
@@ -52,7 +57,12 @@ export function CourseGrid() {
       setNewCourse({ name: "", institution: "", department: "" })
       setIsAddDialogOpen(false)
     } catch (err: any) {
-      alert(err.message)
+      if (err.message.includes("402") || err.message.includes("upgrade") || err.message.includes("maximum")) {
+        setIsAddDialogOpen(false)
+        setShowUpgradeDialog(true)
+      } else {
+        alert(err.message)
+      }
     } finally {
       setIsCreating(false)
     }
@@ -93,13 +103,13 @@ export function CourseGrid() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Course Name</Label>
-                <Input id="name" placeholder="e.g., Thermodynamics 301"
+                <Input id="name" placeholder="e.g., Thermodynamics (THM 301)"
                   value={newCourse.name}
                   onChange={e => setNewCourse({ ...newCourse, name: e.target.value })} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="institution">Institution</Label>
-                <Input id="institution" placeholder="e.g., UNIPORT"
+                <Input id="institution" placeholder="e.g., Landmark"
                   value={newCourse.institution}
                   onChange={e => setNewCourse({ ...newCourse, institution: e.target.value })} />
               </div>
@@ -161,7 +171,7 @@ export function CourseGrid() {
                 <div className="flex items-center gap-2 mt-1">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    Created {new Date(course.created_at).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" })}
+                    Created {course.created_at ? new Date(course.created_at).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" }) : "Recently"}
                   </span>
                 </div>
               </CardContent>
@@ -192,7 +202,8 @@ export function CourseGrid() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteCourse(course.id)}
+                      <AlertDialogAction
+                        onClick={() => handleDeleteCourse(course.id)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                         Delete
                       </AlertDialogAction>
@@ -204,6 +215,27 @@ export function CourseGrid() {
           ))}
         </div>
       )}
+
+      {/* Upgrade dialog */}
+      <AlertDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Course Limit Reached</AlertDialogTitle>
+            <AlertDialogDescription>
+              Free plan allows a maximum of 2 active courses.
+              Deleting a course does not free up a slot — upgrade to
+              Premium for unlimited courses.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push("/billing")}>
+              Upgrade to Premium
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   )
 }
