@@ -56,29 +56,60 @@ export function CourseDocuments({ courseId }: { courseId: string }) {
     if (!selectedFile) return
     setUploading(true)
     try {
-      const uploadFn = uploadType === "course_materials"
-        ? api.uploadCourseMaterial
-        : api.uploadPastQuestion
-      const doc = await uploadFn(courseId, selectedFile)
-      setDocuments(prev => [doc, ...prev])
+      // Step 1 — get presigned URL from backend
+      const { upload_url, file_key } = await api.getPresignedUrl({
+        filename: selectedFile.name,
+        content_type: selectedFile.type || 'application/pdf',
+        doc_type: uploadType,
+        course_id: courseId,
+      })
+  
+      // Step 2 — upload directly to R2 (bypasses Vercel and Railway)
+      const uploadRes = await fetch(upload_url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': selectedFile.type || 'application/pdf',
+        },
+        body: selectedFile,
+      })
+  
+      if (!uploadRes.ok) {
+        throw new Error('Upload to storage failed')
+      }
+  
+      // Step 3 — confirm upload and create document record
+      const fileExt = selectedFile.name.split('.').pop() || 'pdf'
+      const doc = await api.confirmUpload({
+        file_key,
+        file_name: selectedFile.name,
+        file_type: fileExt,
+        doc_type: uploadType,
+        course_id: courseId,
+      })
+  
+      setDocuments(prev => [{ ...doc, created_at: new Date().toISOString() }, ...prev])
       setIsUploadOpen(false)
       setSelectedFile(null)
-
-      // Poll for status updates
+  
+      // Poll for processing status
       const poll = setInterval(async () => {
         try {
-          const status = await api.getDocumentStatus(doc.id)
-          setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, status: status.status } : d))
-          if (status.status === "ready" || status.status === "failed") clearInterval(poll)
+          const statusData = await api.getDocumentStatus(doc.id)
+          setDocuments(prev =>
+            prev.map(d => d.id === doc.id ? { ...d, status: statusData.status } : d)
+          )
+          if (statusData.status === 'ready' || statusData.status === 'failed') {
+            clearInterval(poll)
+          }
         } catch { clearInterval(poll) }
       }, 3000)
+  
     } catch (err: any) {
       alert(err.message)
     } finally {
       setUploading(false)
     }
   }
-
   const handleDelete = async (id: string) => {
     try {
       await api.deleteDocument(id)

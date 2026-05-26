@@ -44,6 +44,33 @@ export function useApiClient() {
     return fn(token)
   }
 
+  const getPresignedUrl = (data: {
+    filename: string
+    content_type: string
+    doc_type: string
+    course_id: string
+  }) =>
+    withToken(token =>
+      apiRequest('/api/v1/storage/presign', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }, token)
+    )
+  
+  const confirmUpload = (data: {
+    file_key: string
+    file_name: string
+    file_type: string
+    doc_type: string
+    course_id: string
+  }) =>
+    withToken(token =>
+      apiRequest('/api/v1/documents/confirm', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }, token)
+    )
+
   // ── Courses ──────────────────────────────────────────────────────────
   const getCourses = () =>
     withToken(token => apiRequest('/api/v1/courses', {}, token))
@@ -183,5 +210,7 @@ export function useApiClient() {
     getSubscriptionStatus,
     cancelSubscription,
     getMe,
+    getPresignedUrl,
+    confirmUpload,
   }
 }
